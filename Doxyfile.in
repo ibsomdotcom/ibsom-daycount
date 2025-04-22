@@ -1,0 +1,18 @@
+# Doxyfile.in
+
+PROJECT_NAME           = "IBSOM Day Count Library"
+OUTPUT_DIRECTORY       = docs
+INPUT                  = @PROJECT_SOURCE_DIR@/include
+FILE_PATTERNS          = *.hpp *.h
+RECURSIVE              = YES
+
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+
+GENERATE_LATEX         = NO
+GENERATE_HTML          = YES
+
+QUIET                  = YES
+WARN_IF_UNDOCUMENTED   = YES
+
