@@ -18,6 +18,7 @@ add_library(daycount STATIC ${LIB_SRC})
 enable_testing()
 file(GLOB TEST_SRC tests/*.cpp)
 add_executable(daycount_tests ${TEST_SRC})
+
 target_link_libraries(daycount_tests daycount Boost::boost)
 add_test(NAME DayCountTest COMMAND daycount_tests)
 
