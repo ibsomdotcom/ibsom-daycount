@@ -1,10 +1,38 @@
+#include <boost/test/data/test_case.hpp>
 #include <boost/test/unit_test.hpp>
 
 #include "daycount/Thirty360.hpp"
 #include <chrono>
+#include <iostream>
 
 using namespace std::chrono;
 using namespace ibsom::daycount;
+
+struct DayCountTestCase
+{
+    std::chrono::year_month_day start;
+    std::chrono::year_month_day end;
+    int expected;
+};
+
+inline
+std::ostream& operator<<(std::ostream& os, const DayCountTestCase& tc)
+{
+    os << "Start: "
+       << static_cast<int>(tc.start.year())       << '-'
+       << static_cast<unsigned>(tc.start.month()) << '-'
+       << static_cast<unsigned>(tc.start.day())
+
+       << ", End: "
+       << static_cast<int>(tc.end.year())       << '-'
+       << static_cast<unsigned>(tc.end.month()) << '-'
+       << static_cast<unsigned>(tc.end.day())
+
+       << ", Expected: "
+       << tc.expected;
+
+    return os;
+}
 
 /******************************************************************************
  *
@@ -38,10 +66,6 @@ using namespace ibsom::daycount;
  * Jul 30     | Aug 31   | Jul 30         | Aug 30       | 30   | Complete
  * Jul 31     | Aug 30   | Jul 30         | Aug 30       | 30   | Complete
  * Jul 31     | Aug 31   | Jul 30         | Aug 30       | 30   | Complete
- * Dec 30     | Jan 1    | Dec 30         | Jan 1        | 1    | Complete
- * Dec 30     | Jan 31   | Dec 30         | Jan 30       | 30   | Complete
- * Dec 31     | Jan 1    | Dec 30         | Jan 1        | 1    | Complete
- * Dec 31     | Jan 31   | Dec 30         | Jan 30       | 30   | Complete
  *
  * 2025 Tests - Non-Leap Year
  * ==========================
@@ -63,919 +87,193 @@ using namespace ibsom::daycount;
  * Jul 30     | Aug 31   | Jul 30         | Aug 30       | 30   | Completed
  * Jul 31     | Aug 30   | Jul 30         | Aug 30       | 30   | Completed
  * Jul 31     | Aug 31   | Jul 30         | Aug 30       | 30   | Completed
+ *
+ * Non-Leap Into Leap (2023 Into 2024)
+ * ===================================
+ * Start Date | End Date | Adjusted Start | Adjusted End | Days | Status
+ * -----------+----------+----------------+--------------+------+----------
+ * Dec 29     | Jan 1    | Dec 29         | Jan 1        | 2    | Completed
+ * Dec 29     | Jan 29   | Dec 29         | Jan 29       | 30   | Completed
+ * Dec 29     | Jan 30   | Dec 29         | Jan 30       | 31   | Completed
+ * Dec 29     | Jan 31   | Dec 29         | Jan 31       | 32   | Completed
  * Dec 30     | Jan 1    | Dec 30         | Jan 1        | 1    | Completed
+ * Dec 30     | Jan 30   | Dec 30         | Jan 30       | 30   | Completed
  * Dec 30     | Jan 31   | Dec 30         | Jan 30       | 30   | Completed
  * Dec 31     | Jan 1    | Dec 30         | Jan 1        | 1    | Completed
+ * Dec 31     | Jan 30   | Dec 30         | Jan 30       | 30   | Completed
+ * Dec 31     | Jan 31   | Dec 30         | Jan 30       | 30   | Completed
+ *
+ * Leap Into Non-Leap (2024 Into 2025)
+ * ===================================
+ * Start Date | End Date | Adjusted Start | Adjusted End | Days | Status
+ * -----------+----------+----------------+--------------+------+----------
+ * Dec 29     | Jan 1    | Dec 29         | Jan 1        | 2    | Completed
+ * Dec 29     | Jan 29   | Dec 29         | Jan 29       | 30   | Completed
+ * Dec 29     | Jan 30   | Dec 29         | Jan 30       | 31   | Completed
+ * Dec 29     | Jan 31   | Dec 29         | Jan 31       | 32   | Completed
+ * Dec 30     | Jan 1    | Dec 30         | Jan 1        | 1    | Completed
+ * Dec 30     | Jan 30   | Dec 30         | Jan 30       | 30   | Completed
+ * Dec 30     | Jan 31   | Dec 30         | Jan 30       | 30   | Completed
+ * Dec 31     | Jan 1    | Dec 30         | Jan 1        | 1    | Completed
+ * Dec 31     | Jan 30   | Dec 30         | Jan 30       | 30   | Completed
+ * Dec 31     | Jan 31   | Dec 30         | Jan 30       | 30   | Completed
+ *
+ * Non-Leap Into Non-Leap (2024 Into 2025)
+ * =======================================
+ * Start Date | End Date | Adjusted Start | Adjusted End | Days | Status
+ * -----------+----------+----------------+--------------+------+----------
+ * Dec 29     | Jan 1    | Dec 29         | Jan 1        | 2    | Completed
+ * Dec 29     | Jan 29   | Dec 29         | Jan 29       | 30   | Completed
+ * Dec 29     | Jan 30   | Dec 29         | Jan 30       | 31   | Completed
+ * Dec 29     | Jan 31   | Dec 29         | Jan 31       | 32   | Completed
+ * Dec 30     | Jan 1    | Dec 30         | Jan 1        | 1    | Completed
+ * Dec 30     | Jan 30   | Dec 30         | Jan 30       | 30   | Completed
+ * Dec 30     | Jan 31   | Dec 30         | Jan 30       | 30   | COmpleted
+ * Dec 31     | Jan 1    | Dec 30         | Jan 1        | 1    | Completed
+ * Dec 31     | Jan 30   | Dec 30         | Jan 30       | 30   | Completed
  * Dec 31     | Jan 31   | Dec 30         | Jan 30       | 30   | Completed
  *
  ******************************************************************************/
 
-/*******************************************************************************
- *
- * 2024 Tests
- *
- ******************************************************************************/
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_jan29_feb28)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/1/29;
-    sys_days end   = 2024y/2/28;
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 29);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_jan29_feb28)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/1/29;
-    sys_days end   = 2024y/2/28;
-
-    double expected = 29.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_jan29_feb29)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/1/29;
-    sys_days end   = 2024y/2/29;
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 30);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_jan29_feb29)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/1/29;
-    sys_days end   = 2024y/2/29;
-
-    double expected = 30.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_jan29_mar1)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/1/29;
-    sys_days end   = 2024y/3/1;
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 32);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_jan29_mar1)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/1/29;
-    sys_days end   = 2024y/3/1;
-
-    double expected = 32.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_jan30_feb28)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/1/30;
-    sys_days end   = 2024y/2/28;
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 28);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_jan30_feb28)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/1/30;
-    sys_days end   = 2024y/2/28;
-
-    double expected = 28.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_jan30_feb29)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/1/30;
-    sys_days end   = 2024y/2/29;
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 29);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_jan30_feb29)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/1/30;
-    sys_days end   = 2024y/2/29;
-
-    double expected = 29.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_jan30_mar1)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/1/30;
-    sys_days end   = 2024y/3/1;
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 31);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_jan30_mar1)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/1/30;
-    sys_days end   = 2024y/3/1;
-
-    double expected = 31.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_jan31_feb28)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/1/31;
-    sys_days end   = 2024y/2/28;
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 28);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_jan31_feb28)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/1/31;
-    sys_days end   = 2024y/2/28;
-
-    double expected = 28.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_jan31_feb29)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/1/31;
-    sys_days end   = 2024y/2/29;
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 29);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_jan31_feb29)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/1/31;
-    sys_days end   = 2024y/2/29;
-
-    double expected = 29.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_jan31_mar1)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/1/31;
-    sys_days end   = 2024y/3/1;
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 31);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_jan31_mar1)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/1/31;
-    sys_days end   = 2024y/3/1;
-
-    double expected = 31.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_feb28_feb28)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/2/28;
-    sys_days end   = 2024y/2/28;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 0);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_feb28_feb28)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/2/28;
-    sys_days end   = 2024y/2/28;
-
-    double expected = 0.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_feb28_feb29)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/2/28;
-    sys_days end   = 2024y/2/29;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 1);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_feb28_feb29)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/2/28;
-    sys_days end   = 2024y/2/29;
-
-    double expected = 1.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_feb28_mar1)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/2/28;
-    sys_days end   = 2024y/3/1;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 3);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_feb28_mar1)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/2/28;
-    sys_days end   = 2024y/3/1;
-
-    double expected = 3.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_feb28_mar30)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/2/28;
-    sys_days end   = 2024y/3/30;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 32);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_feb28_mar30)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/2/28;
-    sys_days end   = 2024y/3/30;
-
-    double expected = 32.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_feb28_mar31)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/2/28;
-    sys_days end   = 2024y/3/31;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 33);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_feb28_mar31)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/2/28;
-    sys_days end   = 2024y/3/31;
-
-    double expected = 33.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_feb29_feb29)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/2/29;
-    sys_days end   = 2024y/2/29;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 0);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_feb29_feb29)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/2/29;
-    sys_days end   = 2024y/2/29;
-
-    double expected = 0.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_feb29_mar1)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/2/29;
-    sys_days end   = 2024y/3/1;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 2);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_feb29_mar1)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/2/29;
-    sys_days end   = 2024y/3/1;
-
-    double expected = 2.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_feb29_mar30)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/2/29;
-    sys_days end   = 2024y/3/30;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 31);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_feb29_mar30)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/2/29;
-    sys_days end   = 2024y/3/30;
-
-    double expected = 31.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_feb29_mar31)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/2/29;
-    sys_days end   = 2024y/3/31;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 32);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_feb29_mar31)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/2/29;
-    sys_days end   = 2024y/3/31;
-
-    double expected = 32.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_jul29_aug30)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/7/29;
-    sys_days end   = 2024y/8/30;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 31);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_jul29_aug30)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/7/29;
-    sys_days end   = 2024y/8/30;
-
-    double expected = 31.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_jul29_aug31)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/7/29;
-    sys_days end   = 2024y/8/31;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 32);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_jul29_aug31)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/7/29;
-    sys_days end   = 2024y/8/31;
-
-    double expected = 32.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_jul30_aug30)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/7/30;
-    sys_days end   = 2024y/8/30;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 30);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_jul30_aug30)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/7/30;
-    sys_days end   = 2024y/8/30;
-
-    double expected = 30.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_jul30_aug31)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/7/30;
-    sys_days end   = 2024y/8/31;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 30);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_jul30_aug31)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/7/30;
-    sys_days end   = 2024y/8/31;
-
-    double expected = 30.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_jul31_aug30)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/7/31;
-    sys_days end   = 2024y/8/30;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 30);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_jul31_aug30)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/7/31;
-    sys_days end   = 2024y/8/30;
-
-    double expected = 30.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_jul31_aug31)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/7/31;
-    sys_days end   = 2024y/8/31;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 30);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_jul31_aug31)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/7/31;
-    sys_days end   = 2024y/8/31;
-
-    double expected = 30.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_dec30_jan1)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/12/30;
-    sys_days end   = 2025y/1/1;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 1);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_dec30_jan1)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/12/30;
-    sys_days end   = 2025y/1/1;
-
-    double expected = 1.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_dec30_jan31)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/12/30;
-    sys_days end   = 2025y/1/31;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 30);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_dec30_jan31)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/12/30;
-    sys_days end   = 2025y/1/31;
-
-    double expected = 30.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_dec31_jan1)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/12/31;
-    sys_days end   = 2025y/1/1;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 1);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_dec31_jan1)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/12/31;
-    sys_days end   = 2025y/1/1;
-
-    double expected = 1.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2024_dec31_jan31)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/12/31;
-    sys_days end   = 2025y/1/31;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 30);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2024_dec31_jan31)
-{
-    Thirty360 dc;
-    sys_days start = 2024y/12/31;
-    sys_days end   = 2025y/1/31;
-
-    double expected = 30.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-/*******************************************************************************
- *
- * 2025 Tests
- *
- ******************************************************************************/
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2025_jan29_feb28)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/1/29;
-    sys_days end   = 2025y/2/28;
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 29);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2025_jan29_feb28)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/1/29;
-    sys_days end   = 2025y/2/28;
-
-    double expected = 29.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2025_jan29_mar1)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/1/29;
-    sys_days end   = 2025y/3/1;
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 32);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2025_jan29_mar1)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/1/29;
-    sys_days end   = 2025y/3/1;
-
-    double expected = 32.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2025_jan30_feb28)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/1/30;
-    sys_days end   = 2025y/2/28;
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 28);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2025_jan30_feb28)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/1/30;
-    sys_days end   = 2025y/2/28;
-
-    double expected = 28.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2025_jan30_mar1)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/1/30;
-    sys_days end   = 2025y/3/1;
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 31);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2025_jan30_mar1)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/1/30;
-    sys_days end   = 2025y/3/1;
-
-    double expected = 31.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2025_jan31_feb28)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/1/31;
-    sys_days end   = 2025y/2/28;
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 28);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2025_jan31_feb28)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/1/31;
-    sys_days end   = 2025y/2/28;
-
-    double expected = 28.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2025_jan31_mar1)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/1/31;
-    sys_days end   = 2025y/3/1;
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 31);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2025_jan31_mar1)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/1/31;
-    sys_days end   = 2025y/3/1;
-
-    double expected = 31.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2025_feb28_feb28)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/2/28;
-    sys_days end   = 2025y/2/28;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 0);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2025_feb28_feb28)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/2/28;
-    sys_days end   = 2025y/2/28;
-
-    double expected = 0.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2025_feb28_mar1)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/2/28;
-    sys_days end   = 2025y/3/1;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 3);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2025_feb28_mar1)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/2/28;
-    sys_days end   = 2025y/3/1;
-
-    double expected = 3.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2025_feb28_mar30)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/2/28;
-    sys_days end   = 2025y/3/30;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 32);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2025_feb28_mar30)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/2/28;
-    sys_days end   = 2025y/3/30;
-
-    double expected = 32.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2025_feb28_mar31)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/2/28;
-    sys_days end   = 2025y/3/31;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 33);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2025_feb28_mar31)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/2/28;
-    sys_days end   = 2025y/3/31;
-
-    double expected = 33.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2025_jul29_aug30)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/7/29;
-    sys_days end   = 2025y/8/30;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 31);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2025_jul29_aug30)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/7/29;
-    sys_days end   = 2025y/8/30;
-
-    double expected = 31.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2025_jul29_aug31)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/7/29;
-    sys_days end   = 2025y/8/31;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 32);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2025_jul29_aug31)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/7/29;
-    sys_days end   = 2025y/8/31;
-
-    double expected = 32.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2025_jul30_aug30)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/7/30;
-    sys_days end   = 2025y/8/30;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 30);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2025_jul30_aug30)
+const std::vector<DayCountTestCase> testCases =
+{
+    /* 2024 Test Cases */
+    {2024y/1/29,  2024y/2/28, 29},
+    {2024y/1/29,  2024y/2/29, 30},
+    {2024y/1/29,  2024y/3/1,  32},
+    {2024y/1/30,  2024y/2/28, 28},
+    {2024y/1/30,  2024y/2/29, 29},
+    {2024y/1/30,  2024y/3/1,  31},
+    {2024y/1/31,  2024y/2/28, 28},
+    {2024y/1/31,  2024y/2/29, 29},
+    {2024y/1/31,  2024y/3/1,  31},
+    {2024y/2/28,  2024y/2/28,  0},
+    {2024y/2/28,  2024y/2/29,  1},
+    {2024y/2/28,  2024y/3/1,   3},
+    {2024y/2/28,  2024y/3/30, 32},
+    {2024y/2/28,  2024y/3/31, 33},
+    {2024y/2/29,  2024y/2/29,  0},
+    {2024y/2/29,  2024y/3/1,   2},
+    {2024y/2/29,  2024y/3/30, 31},
+    {2024y/2/29,  2024y/3/31, 32},
+    {2024y/7/29,  2024y/8/30, 31},
+    {2024y/7/29,  2024y/8/31, 32},
+    {2024y/7/30,  2024y/8/30, 30},
+    {2024y/7/30,  2024y/8/31, 30},
+    {2024y/7/31,  2024y/8/30, 30},
+    {2024y/7/31,  2024y/8/31, 30},
+
+    /* 2025 Test Cases */
+    {2025y/1/29,  2025y/2/28, 29},
+    {2025y/1/29,  2025y/3/1,  32},
+    {2025y/1/30,  2025y/2/28, 28},
+    {2025y/1/30,  2025y/3/1,  31},
+    {2025y/1/31,  2025y/2/28, 28},
+    {2025y/1/31,  2025y/3/1,  31},
+    {2025y/2/28,  2025y/2/28,  0},
+    {2025y/2/28,  2025y/3/1,   3},
+    {2025y/2/28,  2025y/3/30, 32},
+    {2025y/2/28,  2025y/3/31, 33},
+    {2025y/7/29,  2025y/8/30, 31},
+    {2025y/7/29,  2025y/8/31, 32},
+    {2025y/7/30,  2025y/8/30, 30},
+    {2025y/7/30,  2025y/8/31, 30},
+    {2025y/7/31,  2025y/8/30, 30},
+    {2025y/7/31,  2025y/8/31, 30},
+
+    /*
+     * Monthly
+     * 2023 to 2024 Test Cases
+     * Non-Leap Into Leap
+     */
+    {2023y/12/29, 2024y/1/1,   2},
+    {2023y/12/29, 2024y/1/29, 30},
+    {2023y/12/29, 2024y/1/30, 31},
+    {2023y/12/29, 2024y/1/31, 32},
+    {2023y/12/30, 2024y/1/1,   1},
+    {2023y/12/30, 2024y/1/30, 30},
+    {2023y/12/30, 2024y/1/31, 30},
+    {2023y/12/31, 2024y/1/1,   1},
+    {2023y/12/31, 2024y/1/30, 30},
+    {2023y/12/31, 2024y/1/31, 30},
+
+    /*
+     * Monthly
+     * 2024 to 2025 Test Cases
+     * Leap Into Non-Leap
+     */
+    {2024y/12/29, 2025y/1/1,   2},
+    {2024y/12/29, 2025y/1/29, 30},
+    {2024y/12/29, 2025y/1/30, 31},
+    {2024y/12/29, 2025y/1/31, 32},
+    {2024y/12/30, 2025y/1/1,   1},
+    {2024y/12/30, 2025y/1/30, 30},
+    {2024y/12/30, 2025y/1/31, 30},
+    {2024y/12/31, 2025y/1/1,   1},
+    {2024y/12/31, 2025y/1/30, 30},
+    {2024y/12/31, 2025y/1/31, 30},
+
+    /*
+     * Monthly
+     * 2025 to 2026 Test Cases
+     * Non-Leap Into Non-Leap
+     */
+    {2025y/12/29, 2026y/1/1,   2},
+    {2025y/12/29, 2026y/1/29, 30},
+    {2025y/12/29, 2026y/1/30, 31},
+    {2025y/12/29, 2026y/1/31, 32},
+    {2025y/12/30, 2026y/1/1,   1},
+    {2025y/12/30, 2026y/1/30, 30},
+    {2025y/12/30, 2026y/1/31, 30},
+    {2025y/12/31, 2026y/1/1,   1},
+    {2025y/12/31, 2026y/1/30, 30},
+    {2025y/12/31, 2026y/1/31, 30}
+};
+
+void
+check_days_between(
+    const Thirty360& dc,
+    const std::chrono::year_month_day& start,
+    const std::chrono::year_month_day& end,
+    const int expected
+)
 {
-    Thirty360 dc;
-    sys_days start = 2025y/7/30;
-    sys_days end   = 2025y/8/30;
-
-    double expected = 30.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2025_jul30_aug31)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/7/30;
-    sys_days end   = 2025y/8/31;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 30);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2025_jul30_aug31)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/7/30;
-    sys_days end   = 2025y/8/31;
-
-    double expected = 30.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2025_jul31_aug30)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/7/31;
-    sys_days end   = 2025y/8/30;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 30);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2025_jul31_aug30)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/7/31;
-    sys_days end   = 2025y/8/30;
-
-    double expected = 30.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2025_jul31_aug31)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/7/31;
-    sys_days end   = 2025y/8/31;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 30);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2025_jul31_aug31)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/7/31;
-    sys_days end   = 2025y/8/31;
-
-    double expected = 30.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2025_dec30_jan1)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/12/30;
-    sys_days end   = 2026y/1/1;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 1);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2025_dec30_jan1)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/12/30;
-    sys_days end   = 2026y/1/1;
-
-    double expected = 1.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
+    int calculated = dc.daysBetween(sys_days(start), sys_days(end));
+    BOOST_CHECK_EQUAL(calculated, expected);
 }
 
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2025_dec30_jan31)
+void
+check_year_fraction(
+    const Thirty360& dc,
+    const std::chrono::year_month_day& start,
+    const std::chrono::year_month_day& end,
+    const double expected
+)
 {
-    Thirty360 dc;
-    sys_days start = 2025y/12/30;
-    sys_days end   = 2026y/1/31;
-
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 30);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2025_dec30_jan31)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/12/30;
-    sys_days end   = 2026y/1/31;
-
-    double expected = 30.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
+    double calculated = dc.yearFraction(sys_days(start), sys_days(end));
+    BOOST_CHECK_CLOSE(calculated, expected, 1e-10);
 }
 
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2025_dec31_jan1)
+BOOST_DATA_TEST_CASE(test_thirty_360_days_between, boost::unit_test::data::make(testCases), tc)
 {
     Thirty360 dc;
-    sys_days start = 2025y/12/31;
-    sys_days end   = 2026y/1/1;
 
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 1);
-}
-
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2025_dec31_jan1)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/12/31;
-    sys_days end   = 2026y/1/1;
+    std::chrono::year_month_day start = tc.start;
+    std::chrono::year_month_day end   = tc.end;
+    int expected                      = tc.expected;
 
-    double expected = 1.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
+    check_days_between(dc, start, end, expected);
 }
 
-BOOST_AUTO_TEST_CASE(thirty_360_days_between_2025_dec31_jan31)
+BOOST_DATA_TEST_CASE(test_thirty_360_year_fraction, boost::unit_test::data::make(testCases), tc)
 {
     Thirty360 dc;
-    sys_days start = 2025y/12/31;
-    sys_days end   = 2026y/1/31;
 
-    BOOST_CHECK_EQUAL(dc.daysBetween(start, end), 30);
-}
+    std::chrono::year_month_day start = tc.start;
+    std::chrono::year_month_day end   = tc.end;
+    int expectedDays                  = tc.expected;
 
-BOOST_AUTO_TEST_CASE(thirty_360_year_fraction_2025_dec31_jan31)
-{
-    Thirty360 dc;
-    sys_days start = 2025y/12/31;
-    sys_days end   = 2026y/1/31;
+    double expected = static_cast<double>(expectedDays) / 360.0;
 
-    double expected = 30.0 / 360.0;
-    BOOST_CHECK_CLOSE(dc.yearFraction(start, end), expected, 1e-10);
+    check_year_fraction(dc, start, end, expected);
 }
-
