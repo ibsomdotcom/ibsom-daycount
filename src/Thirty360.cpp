@@ -31,9 +31,6 @@ namespace ibsom::daycount
         year_month_day d1 = year_month_day(start);
         year_month_day d2 = year_month_day(end);
 
-        std::cout << "YMD1: " << d1 << std::endl;
-        std::cout << "YMD2: " << d2 << std::endl;
-
         int d1_day = get_day(d1);
         int d2_day = get_day(d2);
 
@@ -43,9 +40,6 @@ namespace ibsom::daycount
         {
             d2_day = std::min(d2_day, 30);
         }
-
-        std::cout << "D1: " << d1_day << std::endl;
-        std::cout << "D2: " << d2_day << std::endl;
 
         int days = (get_year(d2) - get_year(d1)) * 360
             + (get_month(d2) - get_month(d1)) * 30
